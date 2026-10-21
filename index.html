@@ -22,7 +22,8 @@
     .settings{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
     label{display:block;margin-bottom:9px;color:#d6e1f0;font-weight:650;font-size:.9rem}
     select{width:100%;background:#0d1929;color:#fff;border:1px solid #59708b;border-radius:10px;padding:12px}
-    .challenge{border-top:1px solid #39506a;margin-top:24px;padding-top:20px}.challenge strong{font-size:1.15rem}
+    .button-divider {border: none;border-top: 1px solid #39506a;margin: 24px 0;}
+    .challenge{margin-top:24px;}.challenge strong{font-size:1.15rem}
     .instruction{color:#b5c4d9;font-size:.92rem;margin:9px 0 17px}.answer{margin-top:20px;display:grid;gap:14px}
     .answer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .answer-value{font-size:clamp(1.45rem,4.3vw,2.2rem);font-weight:750;margin-top:5px}
@@ -66,6 +67,7 @@
         <strong id="question">Find degree 3 of B♭ major.</strong>
         <p class="instruction">Say or play your answer before revealing it.</p>
         <button class="secondary" id="reveal" type="button" aria-expanded="false" aria-controls="answer">Reveal answer</button>
+          <hr class="button-divider">
         <button class="primary" id="roll" type="button">🎲 Roll again</button>
         <div id="answer" class="answer" hidden>
           <div class="answer-grid">
