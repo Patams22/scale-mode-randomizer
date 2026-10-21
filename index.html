@@ -111,7 +111,7 @@
       const {note,mode}=answerFor();
       $("answer-note").textContent=note;$("answer-mode").textContent=mode;
       $("diagram-title").textContent=`${mode} fretboard pattern`;
-      $("diagram-caption").textContent=`Start this ${mode} pattern on ${note}. Diagrams are user-supplied; confirm whether the image is a movable shape or a key-specific chart.`;
+      $("diagram-caption").textContent=`Start this ${mode} pattern on ${note}. Moveable shape diagrams are user-supplied.`;
       const specific=`images/${slug(note)}-${mode.toLowerCase()}.png`;
       const generic=MODE_IMAGES[mode];
       const token=imageToken, img=$("diagram-image"), missing=$("diagram-missing");
