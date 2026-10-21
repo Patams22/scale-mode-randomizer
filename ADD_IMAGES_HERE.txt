@@ -1,0 +1,10 @@
+Put your seven PNG files here:
+ionian.png
+dorian.png
+phrygian.png
+lydian.png
+mixolydian.png
+aeolian.png
+locrian.png
+
+Optional note-specific files: e.g. d-phrygian.png
