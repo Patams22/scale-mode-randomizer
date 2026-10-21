@@ -18,12 +18,7 @@
     button,select{font:inherit} button{border:0;cursor:pointer;border-radius:12px;padding:15px 18px;font-weight:750}
     button:focus-visible,select:focus-visible{outline:3px solid #ffc66d;outline-offset:3px}
     .primary{background:#f7ba63;color:#16202e;width:100%;font-size:1.1rem}.primary:hover{background:#ffd48e}
-    .secondary{background:#2c4160;color:#fff;border:1px solid #537092}.secondary:hover{background:#3c5678}   
-      #reveal {
-          display: block;
-          margin: 0 auto;
-          min-width: 200px;
-      }
+    .secondary{background:#2c4160;color:#fff;border:1px solid #537092}.secondary:hover{background:#3c5678}
     .settings{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
     label{display:block;margin-bottom:9px;color:#d6e1f0;font-weight:650;font-size:.9rem}
     select{width:100%;background:#0d1929;color:#fff;border:1px solid #59708b;border-radius:10px;padding:12px}
@@ -35,6 +30,18 @@
     .diagram h2{font-size:1.08rem;margin:0 0 12px}.diagram img{display:block;width:100%;height:auto;border-radius:9px;background:#fff;object-fit:contain}
     .missing{color:#c7d5e6;line-height:1.5;background:#1d2d43;border:1px dashed #637c9d;border-radius:12px;padding:20px;text-align:center}
     .missing code{color:#ffcf8a;overflow-wrap:anywhere} .helper{font-size:.86rem;color:#a6b9d2;margin-top:12px}
+    .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+    #reveal{display:block;margin:0 auto;min-width:200px}
+    .sound-setting{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin:-6px 0 17px;color:#d6e1f0;font-size:.9rem}
+    .sound-setting label{margin:0;cursor:pointer}.sound-setting input{width:17px;height:17px;accent-color:#f7ba63;cursor:pointer}
+    .reel-window{height:1.15em;overflow:hidden;position:relative;line-height:1.15}
+    .reel-strip{display:flex;flex-direction:column;will-change:transform}
+    .reel-cell{height:1.15em;display:flex;justify-content:center;align-items:center;flex:none}
+    .tile.spinning{border-color:#f7ba63;box-shadow:0 0 0 1px #f7ba6355,0 0 23px #f7ba6324}
+    .tile.stopped{animation:reel-stop .42s ease-out}
+    @keyframes reel-stop{0%{box-shadow:0 0 0 1px #f7ba63,0 0 30px #f7ba6380}100%{box-shadow:none}}
+    button:disabled,select:disabled{opacity:.65;cursor:wait}
+    @media(prefers-reduced-motion:reduce){.tile.stopped{animation:none}}
     footer{font-size:.83rem;color:#98abc6;margin:20px 0;text-align:center} [hidden]{display:none!important}
     @media(max-width:540px){.settings{grid-template-columns:1fr}.panel{border-radius:16px}.tile{padding:14px}}
   </style>
@@ -46,13 +53,15 @@
     <p class="intro">Roll for a random root and scale degree. Identify the note, name its corresponding mode, and compare your fretboard pattern.</p>
     <section class="panel" aria-label="Randomizer">
       <div class="settings">
-      <div><label for="scale">Parent scale</label><select id="scale"><option value="major">Major</option><option value="minor">Natural minor</option></select></div>
-      <div><label for="accidentals">Root note options</label><select id="accidentals"><option value="all">Naturals, sharps & flats</option><option value="natural">Naturals only</option><option value="sharps">Naturals & sharps</option><option value="flats">Naturals & flats</option></select></div>
-    </div>
-      <div class="results" aria-live="polite" aria-atomic="true">
-        <div class="tile"><div class="label">Root note</div><div class="value" id="root">B♭</div></div>
-        <div class="tile"><div class="label">Scale degree</div><div class="value" id="degree">3</div></div>
+        <div><label for="scale">Parent scale</label><select id="scale"><option value="major">Major</option><option value="minor">Natural minor</option></select></div>
+        <div><label for="accidentals">Root note options</label><select id="accidentals"><option value="all">Naturals, sharps &amp; flats</option><option value="natural">Naturals only</option><option value="sharps">Naturals &amp; sharps</option><option value="flats">Naturals &amp; flats</option></select></div>
       </div>
+      <div class="sound-setting"><input type="checkbox" id="sound" checked><label for="sound">Reel click sound</label></div>
+      <div class="results" aria-live="off">
+        <div class="tile" id="root-tile"><div class="label">Root note</div><div class="value" id="root">B♭</div></div>
+        <div class="tile" id="degree-tile"><div class="label">Scale degree</div><div class="value" id="degree">3</div></div>
+      </div>
+      <div id="spin-status" role="status" class="visually-hidden" aria-live="polite"></div>
       <button class="secondary" id="reveal" type="button" aria-expanded="false" aria-controls="answer">Reveal answer</button>
       <section class="challenge" aria-label="Challenge">
         <strong id="question">Find degree 3 of B♭ major.</strong>
@@ -92,7 +101,8 @@
     const PITCHES = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
     const OFFSETS = {major:[0,2,4,5,7,9,11],minor:[0,2,3,5,7,8,10]};
     const $ = id => document.getElementById(id);
-    let root="B♭", degree=3, revealed=false, imageToken=0;
+    let root="B♭", degree=3, revealed=false, imageToken=0, spinning=false;
+    let audioContext=null;
     function answerFor(){
       const rootPitch=(PITCHES[root[0]]+(root.includes("♯")?1:root.includes("♭")?-1:0)+12)%12;
       const pitch=(rootPitch+OFFSETS[$("scale").value][degree-1])%12;
@@ -106,7 +116,7 @@
     }
     function slug(note){return note.toLowerCase().replace(/♯/g,"-sharp").replace(/♭/g,"-flat").replace(/𝄪/g,"-double-sharp").replace(/𝄫/g,"-double-flat");}
     function render(){
-      $("root").textContent=root;$("degree").textContent=degree;
+      if(!spinning){$("root").textContent=root;$("degree").textContent=degree;}
       $("question").textContent=`Find degree ${degree} of ${root} ${$("scale").value==="major"?"major":"natural minor"}.`;
       $("answer").hidden=!revealed;
       $("reveal").textContent=revealed?"Hide answer":"Reveal answer";
@@ -129,15 +139,75 @@
       }
       attempt(specific,false);
     }
-    $("roll").addEventListener("click",()=>{
+    // Web Audio: short synthesized clicks. No audio files or external services required.
+    function clickSound(){
+      if(!$("sound").checked)return;
+      try{
+        if(!audioContext) audioContext=new (window.AudioContext||window.webkitAudioContext)();
+        if(audioContext.state==="suspended")audioContext.resume();
+        const osc=audioContext.createOscillator(),gain=audioContext.createGain(),t=audioContext.currentTime;
+        osc.type="square";osc.frequency.setValueAtTime(920,t);osc.frequency.exponentialRampToValueAtTime(440,t+.025);
+        gain.gain.setValueAtTime(.022,t);gain.gain.exponentialRampToValueAtTime(.0001,t+.035);
+        osc.connect(gain);gain.connect(audioContext.destination);osc.start(t);osc.stop(t+.04);
+      }catch(e){/* A browser that blocks audio still gets the visual animation. */}
+    }
+    const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    function displayReel(id,value){
+      const el=$(id),win=document.createElement("div"),strip=document.createElement("div");
+      win.className="reel-window";strip.className="reel-strip";
+      const cell=document.createElement("div");cell.className="reel-cell";cell.textContent=value;
+      strip.append(cell);win.append(strip);el.replaceChildren(win);
+      return {el,strip};
+    }
+    async function spinReel(id,tileId,values,finalValue,steps){
+      const tile=$(tileId),initial=id==="root"?root:String(degree);
+      const {strip}=displayReel(id,initial);
+      tile.classList.add("spinning");tile.classList.remove("stopped");
+      let current=initial;
+      for(let i=0;i<steps;i++){
+        let next=i===steps-1?String(finalValue):String(values[Math.floor(Math.random()*values.length)]);
+        const nextCell=document.createElement("div");nextCell.className="reel-cell";nextCell.textContent=next;
+        strip.append(nextCell);
+        void strip.offsetHeight; // Ensure each new reel frame is laid out before scrolling.
+        const duration=i<steps-5?65:65+(i-(steps-5))*29;
+        strip.style.transition=`transform ${duration}ms cubic-bezier(.32,.01,.65,1)`;
+        strip.style.transform="translateY(-50%)";
+        clickSound();
+        await wait(duration+10);
+        strip.style.transition="none";strip.style.transform="translateY(0)";
+        strip.firstChild.remove();
+        current=next;
+      }
+      tile.classList.remove("spinning");tile.classList.add("stopped");
+      $(id).textContent=String(finalValue);
+    }
+    async function roll(){
+      if(spinning)return;
+      spinning=true;revealed=false;render();
+      $("roll").disabled=true;$("reveal").disabled=true;
+      $("scale").disabled=true;$("accidentals").disabled=true;
+      $("spin-status").textContent="Reels spinning";
       const option=$("accidentals").value;
       const pool=NOTES.filter(n=>option==="all"||option==="natural"&&!/[♯♭]/.test(n)||option==="sharps"&&!n.includes("♭")||option==="flats"&&!n.includes("♯"));
-      root=pool[Math.floor(Math.random()*pool.length)];degree=Math.floor(Math.random()*7)+1;revealed=false;render();
-    });
-    $("reveal").addEventListener("click",()=>{revealed=!revealed;render()});
+      const nextRoot=pool[Math.floor(Math.random()*pool.length)],nextDegree=1+Math.floor(Math.random()*7);
+      const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if(!reduced){
+        await Promise.all([
+          spinReel("root","root-tile",pool,nextRoot,12),
+          spinReel("degree","degree-tile",[1,2,3,4,5,6,7],nextDegree,17)
+        ]);
+      }
+      root=nextRoot;degree=nextDegree;spinning=false;
+      $("roll").disabled=false;$("reveal").disabled=false;
+      $("scale").disabled=false;$("accidentals").disabled=false;
+      render();
+      $("spin-status").textContent=`Root note ${root}, scale degree ${degree}`;
+    }
+    $("roll").addEventListener("click",roll);
+    $("reveal").addEventListener("click",()=>{if(spinning)return;revealed=!revealed;render()});
     $("scale").addEventListener("change",()=>{revealed=false;render()});
-    $("accidentals").addEventListener("change",()=>{$("roll").click()});
-    document.addEventListener("keydown",event=>{if(event.target.tagName==="SELECT")return;if(event.code==="Space"&&event.target.tagName==="BODY"){event.preventDefault();$("roll").click()}});
+    $("accidentals").addEventListener("change",roll);
+    document.addEventListener("keydown",event=>{if(event.target.tagName==="SELECT")return;if(event.code==="Space"&&event.target.tagName==="BODY"){event.preventDefault();roll()}});
     render();
   </script>
 </body>
