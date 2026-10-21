@@ -41,14 +41,14 @@
     <p class="intro">Roll for a random root and scale degree. Identify the note, name its corresponding mode, and compare your fretboard pattern.</p>
     <section class="panel" aria-label="Randomizer">
       <div class="results" aria-live="polite" aria-atomic="true">
+        <div class="settings">
+        <div><label for="scale">Parent scale</label><select id="scale"><option value="major">Major</option><option value="minor">Natural minor</option></select></div>
+        <div><label for="accidentals">Root note options</label><select id="accidentals"><option value="all">Naturals, sharps & flats</option><option value="natural">Naturals only</option><option value="sharps">Naturals & sharps</option><option value="flats">Naturals & flats</option></select></div>
+      </div>
         <div class="tile"><div class="label">Root note</div><div class="value" id="root">B♭</div></div>
         <div class="tile"><div class="label">Scale degree</div><div class="value" id="degree">3</div></div>
       </div>
       <button class="secondary" id="reveal" type="button" aria-expanded="false" aria-controls="answer">Reveal answer</button>
-      <div class="settings">
-        <div><label for="scale">Parent scale</label><select id="scale"><option value="major">Major</option><option value="minor">Natural minor</option></select></div>
-        <div><label for="accidentals">Root note options</label><select id="accidentals"><option value="all">Naturals, sharps & flats</option><option value="natural">Naturals only</option><option value="sharps">Naturals & sharps</option><option value="flats">Naturals & flats</option></select></div>
-      </div>
       <section class="challenge" aria-label="Challenge">
         <strong id="question">Find degree 3 of B♭ major.</strong>
         <p class="instruction">Say or play your answer before revealing it.</p>
